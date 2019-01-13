@@ -1,0 +1,154 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Numeric Ocrad.js Example</title>
+		<style>
+			body {
+				background: whiteSmoke;
+				font-family: sans-serif;
+				margin: 30px;
+			}
+			#transcription, #nose {
+				background: white;
+				display: inline-block;
+				border: 1px solid #ddd;
+				margin: 10px;
+				min-height: 300px;
+				flex-grow: 1;
+			}
+			#nose {
+				text-align: center;
+				font-size: 50px;
+				padding: 10px;
+			}
+			#nose img {
+				width: 400px;
+			}
+			#transcription {
+				font-size: 20px;
+				padding: 30px;
+				min-width: 300px;
+				color: gray;
+			}
+			#transcription.done {
+				color: black;
+			}
+			#main {
+				display: flex;
+			}
+		</style>
+	</head>
+	<body>
+		<h1>Ocrad.js Example: Loading from file</h1>
+
+		<script src="ocrad.js"></script>
+		<script>
+			function recognize_image(){
+				document.getElementById('transcription').innerText = "(Recognizing...)"
+
+				OCRAD(document.getElementById("pic"), {
+					numeric: true
+				}, function(text){
+					
+				})
+			}
+			function load_file () {
+				var reader = new FileReader();
+				reader.onload = function(){
+					var img = new Image();
+					img.src = reader.result;
+					img.onload = function(){
+						document.getElementById('nose').innerHTML = ''
+						document.getElementById('nose').appendChild(img)
+						OCRAD(img, function(text){
+							document.getElementById('transcription').className = "done"
+							document.getElementById('transcription').innerText = text;
+							scrutateur = ""
+							table = text.split('\n')
+							console.log("****************")
+							console.log(table)
+							final = new Array();
+							for (i=0; i<table.length; i++){
+								if(!(table[i]==''||table[i]==' '||table[i]=='---')){
+									final.push(table[i]);
+								}
+							}
+							console.log(final);
+							variable = {};
+							variable["$class"] = "org.eeyes.ressources.ComputePV";
+							variable["code"] = final[0].substring(8, final[0].length).replace(/-l/g,'-1')+":"+scrutateur;
+							variable["BV"] = final[1].substring(15, final[1].length).replace(/-l/g,'-1');
+							variable["sectionName"] = final[0].substring(8, final[0].length).replace(/-l/g,'-1');
+							variable["image"] = "";
+							variable["nombreElecteursInscrits"] = parseInt(final[2].split(' ')[2]);
+							variable["nombreSuffrageEmi"] = parseInt(final[3].split(' ')[3]);
+							var today = new Date();
+							var dd = today.getDate();
+							var mm = today.getMonth()+1;
+							var yyyy = today.getFullYear();
+
+							if(dd<10) {
+								dd = '0'+dd
+							}
+
+							if(mm<10) {
+								mm = '0'+mm
+							}
+
+							var hour =  today.getHours();
+							if(hour<10) {
+								hour = '0'+hour
+							}
+							var minute = today.getMinutes();
+							if(minute<10) {
+								minute = '0'+minute
+							}
+							var second = today.getSeconds();
+							if(second<10) {
+								second = '0'+second
+							}
+
+							today = yyyy + '-' + mm + '-' + dd + 'T' + hour + ':' + minute + ':' + second;
+
+							variable["publishedDate"] = today;
+							variable["candidateVoices"] = new Array();
+
+							for (i=5;i<final.length;i++){
+								voice_temp = {};
+								voice_temp["$class"] = "org.eeyes.ressources.Voices";
+								tab_temp = final[i].split(" ");
+								voice_temp["candidate"] = "";
+								for (j=0; j<tab_temp.length-2;j++){
+									voice_temp["candidate"] = voice_temp["candidate"]+tab_temp[j]+" ";
+								}
+								voice_temp["candidate"] = voice_temp["candidate"]+tab_temp[j];
+								j = j+1;
+								voice_temp["voice"] = parseInt(tab_temp[j].replace(/o/,'0').replace(/l/g,'1'));
+								variable["candidateVoices"].push(voice_temp);
+							}
+							variable["scrutateur"] = "resource:org.eeyes.ressources.Author#"+scrutateur;
+
+							console.log(variable);
+						})
+					}
+				}
+				reader.readAsDataURL(document.getElementById('picker').files[0])
+			}
+		</script>
+		
+		
+		<input type="file" onchange="load_file()" id="picker">		
+		<div id="main">
+			<div id="nose">
+				<p>No file loaded</p>
+				<p style="font-size: 25px"> Open a file first </p>
+				<p style="font-size: 15px">it's okay. I'll wait. </p>
+				<p style="font-size: 10px">no seriously, I can't move</p>
+				<p style="font-size: 8px">still waiting...</p>
+			</div>
+			<div id="transcription"></div>
+		</div>
+	</body>	
+</html>
+
+
